@@ -1,10 +1,44 @@
-- name: install Git
+
+
+- name: Install Git
   hosts: servers
-  become: yes
+  gather_facts: false
+  remote_user: admin
+  become: true
 
   tasks:
-    - name: install Git
+    - name: Install base GIT dependencies
       apt:
-        name: git
+        name:
+          - libz-dev
+          - libssl-dev
+          - libcurl4-gnutls-dev
+          - libexpat1-dev
+          - gettext
+          - cmake
+          - gcc
+          - curl
         state: present
-        update_cache: yes
+    - name: create /home/admin/tmp/
+      shell: mkdir /home/admin/tmp/
+
+    - name: Download Git source code tarball
+      get_url:
+        url: https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.42.0.tar.gz
+        dest: /home/admin/tmp/git.tar.gz
+
+    - name: Extract Git source code tarball
+      unarchive:
+        src: /home/admin/tmp/git.tar.gz
+        dest: /home/admin/tmp/
+        remote_src: yes
+
+    - name: Build and install Git from source code
+      shell: |
+        cd /home/admin/tmp/git-*
+        make prefix=/usr/local all && sudo make prefix=/usr/local install
+
+    - name: Clean up temporary files
+      file:
+        path: /home/admin/tmp/
+        state: absent
