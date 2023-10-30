@@ -1,0 +1,54 @@
+- name: Cài đặt và cau hình nginx
+  hosts: servers
+  become: yes
+
+  tasks:
+    - name: Cài đặt nginx
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Thêm người dùng vào nhóm root
+      user:
+        name: "{{ user }}"
+        groups: root
+        state: present
+
+    - name: Creates directory
+      file:
+        path: /var/www/your_domain/html
+        state: directory
+        owner: admin
+        group: root
+        mode: "0775"
+
+    - name: them file index.html
+      copy:
+        src: /home/admin/ansible_quickstart/index.html
+        dest: /var/www/your_domain/html
+
+    - name: Xóa cau hình mặc định cau nginx
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Thêm cau hình nginx
+      copy:
+        src: /home/admin/ansible_quickstart/nginx.conf
+        dest: /etc/nginx/sites-available/
+
+    - name: Kích hoạt cau hình trang web
+      file:
+        src: /etc/nginx/sites-available/nginx.conf
+        dest: /etc/nginx/sites-enabled/nginx.conf
+        state: link
+
+    - name: Đam bao nginx đang chạy
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+  vars:
+    user: "admin"
